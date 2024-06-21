@@ -1,40 +1,60 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import pickle
+import requests
 
-"""
-# Welcome to Streamlit!
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+def fetch_poster(movie_id):
+    response = requests.get(f'https://api.themoviedb.org/3/movie/{movie_id}?api_key=9bf4a92b91c9dc8c33e3ada9ae13e392')
+    data = response.json()
+    if 'poster_path' in data and data['poster_path']:
+        return "https://image.tmdb.org/t/p/w185/" + data['poster_path']
+    else:
+        return "https://via.placeholder.com/185x278.png?text=No+Image"
+# Load the movies DataFrame and similarity matrix
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+movies_df = pickle.load(open('movies.pkl', 'rb'))
+similarity = pickle.load(open('similarity.pkl', 'rb'))
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+# Extract the titles for the dropdown
+movies = movies_df['title'].values
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+def recommend(movie):
+    # Find the movie index in the DataFrame
+    movie_index = movies_df[movies_df['title'] == movie].index[0]
+    distances = similarity[movie_index]
+    # Get the top 5 similar movies
+    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
+    recommended_movies = []
+    recommended_movies_poster = []
+    for i in movies_list:
+        movie_id = movies_df.iloc[i[0]].movie_id
+        recommended_movies_poster.append(fetch_poster(movie_id))
+        recommended_movies.append(movies_df.iloc[i[0]].title)
+    return recommended_movies,recommended_movies_poster
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+
+# Streamlit app
+st.title('Movie Recommender System')
+selected_movie_name = st.selectbox("Select your favourite movie", movies)
+if st.button("Recommend similar movies"):
+    names,posters = recommend(selected_movie_name)
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.text(names[0])
+        st.image(posters[0])
+    with col2:
+        st.text(names[1])
+        st.image(posters[1])
+    with col3:
+        st.text(names[2])
+        st.image(posters[2])
+    with col4:
+        st.text(names[3])
+        st.image(posters[3])
+    with col5:
+        st.text(names[4])
+        st.image(posters[4])
+
