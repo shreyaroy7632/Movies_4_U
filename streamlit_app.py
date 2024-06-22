@@ -46,5 +46,4 @@ if st.button("Recommend similar movies"):
         with col:
             st.image(posters[i])
             st.write(f"**{names[i]}**")
-            st.markdown("<br>", unsafe_allow_html=True)  # Adding some space between movie recommendations
 
