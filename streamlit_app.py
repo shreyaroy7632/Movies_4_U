@@ -46,4 +46,19 @@ if st.button("Recommend similar movies"):
         with col:
             st.image(posters[i])
             st.write(f"**{names[i]}**")
-
+st.markdown(
+    """
+    <style>
+    .stText {
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 10px;
+    }
+    .stImage {
+        margin: 0 auto;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
